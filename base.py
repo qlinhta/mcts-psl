@@ -431,3 +431,11 @@ def construct_game(max_grid, init_grid, level, file):
             exit(1)
         play_move(node, node, j0)
     return node
+
+
+def move_to_index(move):
+    x = unpack_x(move)
+    y = unpack_y(move)
+    direction = unpack_direction(move)
+    k = unpack_k(move)
+    return x * MAX_GRID_SIZE * MAX_GRID_SIZE * MAX_GRID_SIZE + y * MAX_GRID_SIZE * MAX_GRID_SIZE + direction * MAX_GRID_SIZE + k

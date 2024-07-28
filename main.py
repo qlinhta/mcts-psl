@@ -4,7 +4,7 @@ import csv
 from prettytable import PrettyTable
 from nrpa import *
 from colorama import Fore, Style, init
-
+import colorlog
 init()
 
 
@@ -51,7 +51,7 @@ def run_nrpa_for_level(level, iterations, alpha, log_file_path, seed):
         move_counter = 0
 
         while current_node.move_count > 0:
-            best_grid = NRPA(level, current_node, strategy, log_file, iterations, alpha)
+            best_grid = nrpa(level, current_node, strategy, log_file, iterations, alpha)
             log_file.write(f"End recursion level {level}, iterations={iterations}\n")
             current_node = construct_game(best_grid, initial_grid, best_grid.move_history_count, log_file)
             search_moves(current_node)
@@ -62,13 +62,13 @@ def run_nrpa_for_level(level, iterations, alpha, log_file_path, seed):
 
             log_file.write("Best Grid\n")
             display_game(best_grid, log_file)
-            NRPA_display_policy(strategy, log_file)
+            display_policy(strategy, log_file)
 
         end_time = time.time()
         execution_time = end_time - start_time
 
         display_game(best_grid, log_file)
-        NRPA_display_policy(strategy, log_file)
+        display_policy(strategy, log_file)
 
         return {
             'level': level,

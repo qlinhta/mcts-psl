@@ -1,52 +1,49 @@
-import colorlog
-import numpy as np
-import logging
 import time
 from base import *
-from tqdm import tqdm
 from colorama import Fore, Style
-
+from prettytable import PrettyTable
+from tqdm import tqdm
 
 class Policy:
     def __init__(self):
         self.policy = np.zeros(MAX_GRID_SIZE * MAX_GRID_SIZE * 4)
 
 
-def NRPA(level, node, strategy, log_file, iterations, alpha):
+def nrpa(level, node, strategy, log_file, iterations, alpha):
     if level == 0:
-        return NRPA_playout(node, strategy, log_file)
+        return playout(node, strategy, log_file)
     else:
         best_grid = Grid()
         best_grid.move_history_count = 0
         start_time = time.time()
-        for i in range(iterations):
-            result = NRPA(level - 1, node.copy(), strategy, log_file, iterations, alpha)
+        bar = tqdm(range(iterations), desc=f"Level {level}", leave=False, postfix={"Moves": best_grid.move_history_count})
+        for i in bar:
+            result = nrpa(level - 1, node.copy(), strategy, log_file, iterations, alpha)
             if result.move_history_count >= best_grid.move_history_count:
                 best_grid = result.copy()
-                strategy = NRPA_adapt(strategy, node, best_grid, log_file, alpha)
-
+                strategy = adapt(strategy, node, best_grid, log_file, alpha)
+            bar.set_postfix({"Moves": best_grid.move_history_count})
         total_time_elapsed = time.time() - start_time
         logging.info(
             Fore.GREEN +
-            f"COMPLETED LEVEL {level} # TOTAL MOVES: {best_grid.move_history_count} # SIGNATURE: {sign_grid(best_grid):010d} | "
-            f"Total Time: {total_time_elapsed:.2f}s | Time per iteration: {total_time_elapsed / iterations:.2f}s \n"
+            f"COMPLETED LEVEL {level} // TOTAL MOVES: {best_grid.move_history_count} // TIME: {total_time_elapsed:.2f}s // SIGNATURE: {sign_grid(best_grid):010d} \n"
             + Style.RESET_ALL
         )
         return best_grid
 
 
-def NRPA_playout(grid, policy, log_file):
+def playout(grid, policy, log_file):
     current_grid = grid.copy()
     temp_grid = Grid()
     search_moves(current_grid)
 
     while current_grid.move_count > 0:
-        move = NRPA_select_move(current_grid, policy, log_file)
+        move = select_move(current_grid, policy, log_file)
         play_move(current_grid, temp_grid, move)
         search_moves_optimized(current_grid, temp_grid, move)
 
         if temp_grid.move_count > 0:
-            move = NRPA_select_move(temp_grid, policy, log_file)
+            move = select_move(temp_grid, policy, log_file)
             play_move(temp_grid, current_grid, move)
             search_moves_optimized(temp_grid, current_grid, move)
         else:
@@ -55,9 +52,9 @@ def NRPA_playout(grid, policy, log_file):
     return current_grid
 
 
-def NRPA_select_move(grid, strategy, log_file):
+def select_move(grid, strategy, log_file):
     total_weight = 0.0
-    NRPA_generate_code(grid, log_file)
+    generate(grid, log_file)
 
     for i in range(grid.move_count):
         weight = np.exp(strategy.policy[grid.code[i]])
@@ -90,7 +87,7 @@ def NRPA_select_move(grid, strategy, log_file):
     exit(1)
 
 
-def NRPA_adapt(strategy, root, best_grid, log_file, alpha):
+def adapt(strategy, root, best_grid, log_file, alpha):
     start_time = time.time()
     new_strategy = Policy()
     new_strategy.policy = strategy.policy.copy()
@@ -98,7 +95,7 @@ def NRPA_adapt(strategy, root, best_grid, log_file, alpha):
     search_moves(node)
 
     for i in range(node.move_history_count, best_grid.move_history_count):
-        NRPA_generate_code(node, log_file)
+        generate(node, log_file)
         total_weight = 0.0
         target_move_index = -1
 
@@ -128,7 +125,7 @@ def NRPA_adapt(strategy, root, best_grid, log_file, alpha):
     return new_strategy
 
 
-def NRPA_generate_code(grid, log_file):
+def generate(grid, log_file):
     dirX = [0, 1, 1, 1]
     dirY = [1, 1, 0, -1]
     dirD = [2, 4, 8, 16]
@@ -181,7 +178,7 @@ def NRPA_generate_code(grid, log_file):
         grid.code[i] = grid_code
 
 
-def NRPA_display_policy(strategy, log_file):
+def display_policy(strategy, log_file):
     log_file.write("STRATEGY\n")
     for index in range(MAX_GRID_SIZE * MAX_GRID_SIZE * 4):
         if strategy.policy[index] != 0:
