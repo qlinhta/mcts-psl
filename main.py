@@ -1,13 +1,11 @@
 import random
-import logging
 import argparse
-import numpy as np
 import csv
-import time
 from prettytable import PrettyTable
 from nrpa import *
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+from colorama import Fore, Style, init
+
+init()
 
 
 def setup_logging(log_file):
@@ -33,22 +31,20 @@ def setup_logging(log_file):
     logging.basicConfig(level=logging.INFO, handlers=[file_handler, console_handler])
 
 
-def run_nrpa_for_level(level, iterations, alpha, log_file_path):
+def run_nrpa_for_level(level, iterations, alpha, log_file_path, seed):
     with open(log_file_path, "w") as log_file:
         initial_grid = Grid()
         best_grid = Grid()
         strategy = Policy()
 
-        SEED = 1
-        random.seed(SEED)
-        logging.info(f"Seed: {SEED}")
+        random.seed(seed)
+        logging.info(f"Seed: {seed}")
 
         initialize_game(initial_grid)
         current_node = initial_grid.copy()
         search_moves(current_node)
-
-        logging.info(f"Starting NRPA with level={level}, iterations={iterations}, alpha={alpha}")
-
+        logging.info(
+            Fore.LIGHTYELLOW_EX + f"Starting NRPA with level={level}, iterations={iterations}, alpha={alpha}" + Style.RESET_ALL)
         start_time = time.time()
 
         best_grid.move_history_count = 0
@@ -81,6 +77,7 @@ def run_nrpa_for_level(level, iterations, alpha, log_file_path):
             'time': execution_time
         }
 
+
 def main():
     parser = argparse.ArgumentParser(description='Morpion Solitaire with NRPA')
     parser.add_argument('--log', type=str, default='process.log', help='Path to log file')
@@ -89,6 +86,7 @@ def main():
     parser.add_argument('--alpha', type=float, default=1.0, help='Alpha value for policy adaptation')
     parser.add_argument('--data', type=str, default='data.csv', help='Path to save data for plotting')
     parser.add_argument('--level', type=int, help='Run NRPA for a single level')
+    parser.add_argument('--seed', type=int, default=1, help='Random seed for reproducibility')
 
     args = parser.parse_args()
 
@@ -96,14 +94,15 @@ def main():
 
     iterations = args.iterations
     alpha = args.alpha
+    seed = args.seed
     results = []
 
     if args.level:
-        result = run_nrpa_for_level(args.level, iterations, alpha, args.result)
+        result = run_nrpa_for_level(args.level, iterations, alpha, args.result, seed)
         results.append(result)
     else:
         for level in range(1, 6):
-            result = run_nrpa_for_level(level, iterations, alpha, args.result)
+            result = run_nrpa_for_level(level, iterations, alpha, args.result, seed)
             results.append(result)
 
     with open(args.data, 'w', newline='') as data_file:
@@ -114,9 +113,18 @@ def main():
     logging.info(f"Results saved to {args.data}")
 
     table = PrettyTable()
-    table.field_names = ["Level", "Moves", "Signature", "Time (s)"]
+    table.field_names = ["Seed", "Level", "Moves", "Signature", "Time (s)", "Time per iteration (s)",
+                         "Time per move (s)"]
     for result in results:
-        table.add_row([result['level'], result['moves'], result['signature'], f"{result['time']:.2f}"])
+        table.add_row([
+            seed,
+            result['level'],
+            result['moves'],
+            result['signature'],
+            result['time'],
+            result['time'] / iterations,
+            result['time'] / result['moves']
+        ])
 
     logging.info("\n" + table.get_string())
 

@@ -2,19 +2,21 @@ import numpy as np
 import logging
 
 MAX_GRID_SIZE = 64
-MAXCOU = 1000
+MAX_HISTORY_SIZE = 1000
+MAX_LEGAL_MOVES = 1000
+MAX_POLICY_SIZE = 7000
 
 
 class Grid:
     def __init__(self):
         self.move_history_count = 0
         self.grid = np.zeros((MAX_GRID_SIZE, MAX_GRID_SIZE), dtype=int)
-        self.history = np.zeros(MAXCOU, dtype=int)
+        self.history = np.zeros(MAX_HISTORY_SIZE, dtype=int)
         self.move_count = 0
-        self.moves = np.zeros(MAXCOU, dtype=int)
-        self.priority = np.zeros(MAXCOU, dtype=int)
-        self.dominator = np.full(MAXCOU, 999, dtype=int)
-        self.code = np.zeros(MAXCOU, dtype=int)
+        self.moves = np.zeros(MAX_LEGAL_MOVES, dtype=int)
+        self.priority = np.zeros(MAX_LEGAL_MOVES, dtype=int)
+        self.dominator = np.full(MAX_LEGAL_MOVES, 999, dtype=int)
+        self.code = np.zeros(MAX_LEGAL_MOVES, dtype=int)
 
     def copy(self):
         new_grid = Grid()
@@ -194,7 +196,7 @@ def play_move(source_grid, target_grid, move_index):
     target_grid.history[target_grid.move_history_count] = source_grid.moves[move_index]
     target_grid.move_history_count += 1
 
-    if target_grid.move_history_count > MAXCOU:
+    if target_grid.move_history_count > MAX_HISTORY_SIZE:
         raise ValueError("Move history storage table too small")
 
     if target_grid.grid[unpack_x(source_grid.moves[move_index]), unpack_y(source_grid.moves[move_index])] != 0:
@@ -278,7 +280,7 @@ def search_moves(grid):
                                     grid.moves[grid.move_count] = pack_move(moveX, moveY, moveDirection, moveK)
                                     grid.dominator[grid.move_count] = 999
                                     grid.move_count += 1
-                                    if grid.move_count > MAXCOU:
+                                    if grid.move_count > MAX_HISTORY_SIZE:
                                         raise ValueError("Move table too small")
                                     if i in [1, MAX_GRID_SIZE - 1] or j in [1, MAX_GRID_SIZE - 1]:
                                         raise ValueError("Grid too small: move found on edge")
@@ -404,7 +406,7 @@ def search_moves_optimized(grid_a, grid_b, played_move):
                                         grid_b.moves[grid_b.move_count] = pack_move(moveX, moveY, moveDirection, moveK)
                                         grid_b.dominator[grid_b.move_count] = 999
                                         grid_b.move_count += 1
-                                        if grid_b.move_count > MAXCOU:
+                                        if grid_b.move_count > MAX_HISTORY_SIZE:
                                             raise ValueError("Move table too small")
                                         if i in [1, MAX_GRID_SIZE - 1] or j in [1, MAX_GRID_SIZE - 1]:
                                             raise ValueError("Grid too small: move found on edge")

@@ -1,8 +1,10 @@
 import colorlog
-from base import *
 import numpy as np
 import logging
 import time
+from base import *
+from tqdm import tqdm
+from colorama import Fore, Style
 
 
 class Policy:
@@ -17,27 +19,19 @@ def NRPA(level, node, strategy, log_file, iterations, alpha):
         best_grid = Grid()
         best_grid.move_history_count = 0
         start_time = time.time()
-
         for i in range(iterations):
-            iter_start_time = time.time()
-            result = NRPA(level - 1, node, strategy, log_file, iterations, alpha)
-            iter_time_elapsed = time.time() - iter_start_time
-
+            result = NRPA(level - 1, node.copy(), strategy, log_file, iterations, alpha)
             if result.move_history_count >= best_grid.move_history_count:
                 best_grid = result.copy()
                 strategy = NRPA_adapt(strategy, node, best_grid, log_file, alpha)
 
-            """logging.info(
-                f"Iteration {i + 1}/{iterations} | Level: {level} | Moves: {best_grid.move_history_count} | "
-                f"Iteration Time: {iter_time_elapsed:.2f}s | Total Time: {time.time() - start_time:.2f}s | "
-                f"% Complete: {(i + 1) / iterations * 100:.2f}%")"""
-
         total_time_elapsed = time.time() - start_time
-        logger = colorlog.getLogger()
-        logger.info(
+        logging.info(
+            Fore.GREEN +
             f"COMPLETED LEVEL {level} # TOTAL MOVES: {best_grid.move_history_count} # SIGNATURE: {sign_grid(best_grid):010d} | "
-            f"Total Time: {total_time_elapsed:.2f}s",
-            extra={'color': 'cyan'})
+            f"Total Time: {total_time_elapsed:.2f}s | Time per iteration: {total_time_elapsed / iterations:.2f}s \n"
+            + Style.RESET_ALL
+        )
         return best_grid
 
 
@@ -45,17 +39,14 @@ def NRPA_playout(grid, policy, log_file):
     current_grid = grid.copy()
     temp_grid = Grid()
     search_moves(current_grid)
-    move_counter = 0
 
     while current_grid.move_count > 0:
         move = NRPA_select_move(current_grid, policy, log_file)
-        move_counter += 1
         play_move(current_grid, temp_grid, move)
         search_moves_optimized(current_grid, temp_grid, move)
 
         if temp_grid.move_count > 0:
             move = NRPA_select_move(temp_grid, policy, log_file)
-            move_counter += 1
             play_move(temp_grid, current_grid, move)
             search_moves_optimized(temp_grid, current_grid, move)
         else:
@@ -131,20 +122,18 @@ def NRPA_adapt(strategy, root, best_grid, log_file, alpha):
             new_strategy.policy[node.code[j]] -= alpha * np.exp(strategy.policy[node.code[j]]) / total_weight
         play_move(node, node, target_move_index)
         search_moves(node)
-    logger = colorlog.getLogger()
-    logger.info(
+    logging.info(
         f"ADAPTED STRATEGY # ALPHA: {alpha} # ADAPTED MOVES: {node.move_history_count - root.move_history_count} "
-        f"# PREV.SIG: {sign_grid(root):010d} # NEW.SIG: {sign_grid(node):010d} # TIME: {time.time() - start_time:.2f}s",
-        extra={'color': 'green'})
+        f"# PREV.SIG: {sign_grid(root):010d} # NEW.SIG: {sign_grid(node):010d} # TIME: {time.time() - start_time:.2f}s")
     return new_strategy
 
 
 def NRPA_generate_code(grid, log_file):
-    directions_x = [0, 1, 1, 1]
-    directions_y = [1, 1, 0, -1]
-    directions_d = [2, 4, 8, 16]
-    directions_o = [32, 64, 128, 256]
-    directions_do = [34, 68, 136, 272]
+    dirX = [0, 1, 1, 1]
+    dirY = [1, 1, 0, -1]
+    dirD = [2, 4, 8, 16]
+    dirO = [32, 64, 128, 256]
+    dirDO = [34, 68, 136, 272]
 
     for i in range(grid.move_count):
         move_x = unpack_x(grid.moves[i])
@@ -152,19 +141,43 @@ def NRPA_generate_code(grid, log_file):
         move_d = unpack_direction(grid.moves[i])
         move_k = unpack_k(grid.moves[i])
 
-        end_x1 = move_x + move_k * directions_x[move_d]
-        end_y1 = move_y + move_k * directions_y[move_d]
-        start_x2 = move_x + (move_k - 4) * directions_x[move_d]
-        start_y2 = move_y + (move_k - 4) * directions_y[move_d]
+        end_x1 = move_x + move_k * dirX[move_d]
+        end_y1 = move_y + move_k * dirY[move_d]
+        start_x2 = move_x + (move_k - 4) * dirX[move_d]
+        start_y2 = move_y + (move_k - 4) * dirY[move_d]
 
         n1 = (MAX_GRID_SIZE - 1) * end_y1 + end_x1
         n2 = (MAX_GRID_SIZE - 1) * start_y2 + start_x2
 
         if n1 < n2:
-            grid_code = 4 * n1 + 0 if end_x1 < start_x2 else 1 if end_x1 == start_x2 else 2 if end_y1 > start_y2 else 3
+            grid_code = 4 * n1
+            if end_x1 < start_x2:
+                grid_code += 0
+            elif end_x1 == start_x2:
+                grid_code += 1
+            else:
+                if end_y1 > start_y2:
+                    grid_code += 2
+                else:
+                    grid_code += 3
         else:
-            grid_code = 4 * n2 + 0 if start_x2 < end_x1 else 1 if start_x2 == end_x1 else 2 if start_y2 > end_y1 else 3
+            grid_code = 4 * n2
+            if start_x2 < end_x1:
+                grid_code += 0
+            elif start_x2 == end_x1:
+                grid_code += 1
+            else:
+                if start_y2 > end_y1:
+                    grid_code += 2
+                else:
+                    grid_code += 3
 
+        for direction in range(4):
+            if move_d == direction:
+                if (grid.grid[end_y1, end_x1] & dirD[direction]) or (grid.grid[start_y2, start_x2] & dirD[direction]):
+                    grid_code += dirDO[direction]
+                if (grid.grid[end_y1, end_x1] & dirO[direction]) or (grid.grid[start_y2, start_x2] & dirO[direction]):
+                    grid_code += dirD[direction]
         grid.code[i] = grid_code
 
 
