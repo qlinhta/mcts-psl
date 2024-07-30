@@ -1,0 +1,22 @@
+2024-07-29 10:12:33,881 - INFO - Seed: 1
+2024-07-29 10:12:33,881 - INFO - Initializing game
+2024-07-29 10:12:33,881 - INFO - Game initialized
+2024-07-29 10:12:33,886 - INFO - [93mStarting NRPA with level=1, iterations=100, alpha=1.0[0m
+2024-07-29 10:12:34,287 - INFO - ADAPTED STRATEGY # ALPHA: 1.0 # ADAPTED MOVES: 67 # PREV.SIG: 0000012321 # NEW.SIG: 0010711737 # TIME: 0.34s
+2024-07-29 10:12:34,678 - INFO - ADAPTED STRATEGY # ALPHA: 1.0 # ADAPTED MOVES: 68 # PREV.SIG: 0000012321 # NEW.SIG: 0011685749 # TIME: 0.34s
+2024-07-29 10:12:35,555 - INFO - ADAPTED STRATEGY # ALPHA: 1.0 # ADAPTED MOVES: 76 # PREV.SIG: 0000012321 # NEW.SIG: 0011958058 # TIME: 0.38s
+2024-07-29 10:12:36,019 - INFO - ADAPTED STRATEGY # ALPHA: 1.0 # ADAPTED MOVES: 81 # PREV.SIG: 0000012321 # NEW.SIG: 0014879658 # TIME: 0.40s
+2024-07-29 10:12:39,908 - INFO - [32mCOMPLETED LEVEL 1 // TOTAL MOVES: 81 // TIME: 6.02s // SIGNATURE: 0014879658 
+[0m
+2024-07-29 10:12:40,306 - INFO - Move 1 completed ## Total moves: 81 ## Time elapsed: 6.42s
+2024-07-29 10:12:40,306 - INFO - Displaying game
+2024-07-29 10:12:40,308 - INFO - Game displayed
+2024-07-29 10:12:40,309 - INFO - Displaying game
+2024-07-29 10:12:40,312 - INFO - Game displayed
+2024-07-29 10:12:40,314 - INFO - Results saved to ./logs/nrpa_100_1_1.csv
+2024-07-29 10:12:40,317 - INFO - 
++------+-------+-------+-----------+--------------------+------------------------+---------------------+
+| Seed | Level | Moves | Signature |      Time (s)      | Time per iteration (s) |  Time per move (s)  |
++------+-------+-------+-----------+--------------------+------------------------+---------------------+
+|  1   |   1   |   81  |  14879658 | 6.4229161739349365 |  0.06422916173934937   | 0.07929526140660416 |
++------+-------+-------+-----------+--------------------+------------------------+---------------------+

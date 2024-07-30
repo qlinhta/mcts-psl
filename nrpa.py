@@ -16,13 +16,13 @@ def nrpa(level, node, strategy, log_file, iterations, alpha):
         best_grid = Grid()
         best_grid.move_history_count = 0
         start_time = time.time()
-        bar = tqdm(range(iterations), desc=f"Level {level}", leave=False, postfix={"Moves": best_grid.move_history_count})
-        for i in bar:
+        # bar = tqdm(range(iterations), desc=f"Level {level}", leave=False, postfix={"Moves": best_grid.move_history_count})
+        for i in range(iterations):
             result = nrpa(level - 1, node.copy(), strategy, log_file, iterations, alpha)
             if result.move_history_count >= best_grid.move_history_count:
                 best_grid = result.copy()
                 strategy = adapt(strategy, node, best_grid, log_file, alpha)
-            bar.set_postfix({"Moves": best_grid.move_history_count})
+            # bar.set_postfix({"Moves": best_grid.move_history_count})
         total_time_elapsed = time.time() - start_time
         logging.info(
             Fore.GREEN +
