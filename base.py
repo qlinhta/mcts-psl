@@ -439,3 +439,4 @@ def move_to_index(move):
     direction = unpack_direction(move)
     k = unpack_k(move)
     return x * MAX_GRID_SIZE * MAX_GRID_SIZE * MAX_GRID_SIZE + y * MAX_GRID_SIZE * MAX_GRID_SIZE + direction * MAX_GRID_SIZE + k
+

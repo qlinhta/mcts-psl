@@ -3,6 +3,10 @@ from base import *
 from colorama import Fore, Style
 from prettytable import PrettyTable
 from tqdm import tqdm
+import numpy as np
+import logging
+import random
+
 
 class Policy:
     def __init__(self):
@@ -16,17 +20,15 @@ def nrpa(level, node, strategy, log_file, iterations, alpha):
         best_grid = Grid()
         best_grid.move_history_count = 0
         start_time = time.time()
-        # bar = tqdm(range(iterations), desc=f"Level {level}", leave=False, postfix={"Moves": best_grid.move_history_count})
         for i in range(iterations):
             result = nrpa(level - 1, node.copy(), strategy, log_file, iterations, alpha)
             if result.move_history_count >= best_grid.move_history_count:
                 best_grid = result.copy()
                 strategy = adapt(strategy, node, best_grid, log_file, alpha)
-            # bar.set_postfix({"Moves": best_grid.move_history_count})
         total_time_elapsed = time.time() - start_time
         logging.info(
             Fore.GREEN +
-            f"COMPLETED LEVEL {level} // TOTAL MOVES: {best_grid.move_history_count} // TIME: {total_time_elapsed:.2f}s // SIGNATURE: {sign_grid(best_grid):010d} \n"
+            f"NRPA: COMPLETED LEVEL {level} // TOTAL MOVES: {best_grid.move_history_count} // TIME: {total_time_elapsed:.2f}s // SIGNATURE: {sign_grid(best_grid):010d} \n"
             + Style.RESET_ALL
         )
         return best_grid
@@ -192,3 +194,50 @@ def sign_grid(grid):
         for j in range(MAX_GRID_SIZE):
             signature += grid.grid[i, j] * i * j
     return signature
+
+
+def run_nrpa_for_level(level, iterations, alpha, log_file_path, seed):
+    with open(log_file_path, "w") as log_file:
+        initial_grid = Grid()
+        best_grid = Grid()
+        strategy = Policy()
+
+        random.seed(seed)
+        logging.info(f"Seed: {seed}")
+
+        initialize_game(initial_grid)
+        current_node = initial_grid.copy()
+        search_moves(current_node)
+        logging.info(
+            Fore.LIGHTYELLOW_EX + f"Starting NRPA with level={level}, iterations={iterations}, alpha={alpha}" + Style.RESET_ALL)
+        start_time = time.time()
+
+        best_grid.move_history_count = 0
+        move_counter = 0
+
+        while current_node.move_count > 0:
+            best_grid = nrpa(level, current_node, strategy, log_file, iterations, alpha)
+            log_file.write(f"End recursion level {level}, iterations={iterations}\n")
+            current_node = construct_game(best_grid, initial_grid, best_grid.move_history_count, log_file)
+            search_moves(current_node)
+
+            move_counter += 1
+            logging.info(
+                f"Move {move_counter} completed ## Total moves: {best_grid.move_history_count} ## Time elapsed: {time.time() - start_time:.2f}s")
+
+            log_file.write("Best Grid\n")
+            display_game(best_grid, log_file)
+            display_policy(strategy, log_file)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+
+        display_game(best_grid, log_file)
+        display_policy(strategy, log_file)
+
+        return {
+            'level': level,
+            'moves': best_grid.move_history_count,
+            'signature': sign_grid(best_grid),
+            'time': execution_time
+        }
