@@ -3,9 +3,9 @@ import argparse
 import csv
 from prettytable import PrettyTable
 from nrpa import *
-from nmcs import *
 from colorama import Fore, Style, init
 import colorlog
+import logging
 
 init()
 
@@ -34,9 +34,7 @@ def setup_logging(log_file):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Morpion Solitaire with NRPA or NMCS')
-    parser.add_argument('--algorithm', type=str, choices=['nrpa', 'nmcs'], default='nrpa',
-                        help='Algorithm to use (nrpa or nmcs)')
+    parser = argparse.ArgumentParser(description='Morpion Solitaire with NRPA')
     parser.add_argument('--log', type=str, default='process.log', help='Path to log file')
     parser.add_argument('--result', type=str, default='results.txt', help='Path to result file')
     parser.add_argument('--iterations', type=int, default=100, help='Number of iterations in NRPA')
@@ -55,21 +53,11 @@ def main():
     results = []
 
     if args.level:
-        if args.algorithm == 'nrpa':
-            result = run_nrpa_for_level(args.level, iterations, alpha, args.result, seed)
-        elif args.algorithm == 'nmcs':
-            result = run_nmcs_for_level(args.level, args.result, seed)
-        else:
-            raise ValueError(f"Algorithm {args.algorithm} is not supported. Choose either 'nrpa' or 'nmcs'.")
+        result = run_nrpa_for_level(args.level, iterations, alpha, args.result, seed)
         results.append(result)
     else:
         for level in range(1, 6):
-            if args.algorithm == 'nrpa':
-                result = run_nrpa_for_level(level, iterations, alpha, args.result, seed)
-            elif args.algorithm == 'nmcs':
-                result = run_nmcs_for_level(level, args.result, seed)
-            else:
-                raise ValueError(f"Algorithm {args.algorithm} is not supported. Choose either 'nrpa' or 'nmcs'.")
+            result = run_nrpa_for_level(level, iterations, alpha, args.result, seed)
             results.append(result)
 
     with open(args.data, 'w', newline='') as data_file:
@@ -89,7 +77,7 @@ def main():
             result['moves'],
             result['signature'],
             result['time'],
-            result['time'] / iterations if args.algorithm == 'nrpa' else 'N/A',
+            result['time'] / iterations,
             result['time'] / result['moves']
         ])
 
